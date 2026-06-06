@@ -1,0 +1,2915 @@
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Top Drugs Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f7fb;
+      display: flex;
+      justify-content: center;
+    }
+
+    #app {
+      max-width: 600px;
+      width: 100%;
+      background: #ffffff;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+#start-button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: 1px solid #007bff;
+  background-color: #007bff;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+#start-button:hover {
+  background-color: #0056b3;
+}
+
+    #modes, #filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    #modes button {
+      flex: 1 1 120px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #007bff;
+      background-color: #ffffff;
+      color: #007bff;
+      cursor: pointer;
+    }
+
+    #modes button:hover {
+      background-color: #007bff;
+      color: #ffffff;
+    }
+
+    #filters label {
+      font-size: 0.9rem;
+    }
+
+    #score, #streak, #roundTime, #avgTime {
+      text-align: center;
+      margin: 4px 0;
+    }
+
+    #question {
+      font-weight: bold;
+      text-align: center;
+      margin: 16px 0;
+      min-height: 40px;
+    }
+
+    #options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    #options button {
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background-color: #e9edf5;
+      cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #options button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    #next-container {
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    #next-container button {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: 1px solid #28a745;
+      background-color: #28a745;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    #next-container button:hover {
+      background-color: #218838;
+    }
+
+    #feedback {
+      text-align: center;
+      font-weight: bold;
+      min-height: 24px;
+      margin-top: 4px;
+    }
+
+    #feedback.correct {
+      color: #2e7d32; /* green */
+    }
+
+    #feedback.incorrect {
+      color: #c62828; /* red */
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      #app {
+        padding: 12px;
+      }
+
+      #options {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Top Drugs Quiz</h1>
+
+  <!-- Start screen -->
+  <div id="start-screen">
+    <div id="modes">
+      <button onclick="setMode('infinite')">Infinite Mode</button>
+      <button onclick="setMode('classic20')">Classic 20</button>
+    </div>
+
+    <div id="filters">
+<strong>Include categories:</strong>
+
+<label>
+  <input type="checkbox" class="system-filter" value="Respiratory Agents" checked>
+  Respiratory
+</label>
+<label>
+  <input type="checkbox" class="system-filter" value="Neurologic Agents" checked>
+  Neurologic
+</label>
+<label>
+  <input type="checkbox" class="system-filter" value="Gastrointestinal Agents" checked>
+  Gastrointestinal
+</label>
+<label>
+  <input type="checkbox" class="system-filter" value="Endocrine Agents" checked>
+  Endocrine
+</label>
+<label>
+  <input type="checkbox" class="system-filter" value="Cardiovascular Agents" checked>
+  Cardiovascular
+</label>
+<label>
+  <input type="checkbox" class="system-filter" value="Anti-infective Agents" checked>
+  Anti-infective
+</label>
+<label>
+  <input type="checkbox" class="system-filter" value="Analgesic Agents" checked>
+  Analgesic
+</label>
+<label>
+  <input type="checkbox" class="system-filter" value="Miscellaneous Agents" checked>
+  Miscellaneous
+</label>
+
+      <button onclick="applyFilters()">Apply Filters</button>
+    </div>
+
+  <div style="text-align:center; margin-top:16px;">
+    <button id="start-button" onclick="startGame()">Start Quiz</button>
+  </div>
+
+  <div style="text-align:center; margin-top:8px;">
+    <button onclick="resetMisses()">Reset Misses</button>
+    </div>
+  </div>
+
+  <!-- Quiz screen -->
+<div id="quiz-screen" style="display:none;">
+  <div id="quiz-top-bar" style="text-align:center; margin-bottom:8px;">
+    <button id="review-button" onclick="toggleReviewMode()">Review Misses</button>
+    <button onclick="returnToStart()">Back to Start</button>
+  </div>
+
+  <p id="score">Score: 0 / 0</p>
+  <p id="streak">Streak: 0</p>
+  <p id="roundTime">Round time: 0.0 s</p>
+  <p id="avgTime">Avg per question: 0.0 s</p>
+
+  <p id="question"></p>
+  <div id="options"></div>
+  <p id="feedback"></p>
+
+  <div id="next-container">
+    <button onclick="newQuestion()">Next Question</button>
+  </div>
+</div>
+
+    <script>
+const drugs = [
+{
+  brand: "Suboxone",
+  generic: "buprenorphine/naloxone",
+  class: "partial opioid agonist/antagonist combination",
+  indication: "maintenance treatment of opioid use disorder",
+  system: "analgesic agents"
+},
+{
+  brand: "Soma",
+  generic: "carisoprodol",
+  class: "skeletal muscle relaxant",
+  indication: "acute painful musculoskeletal conditions",
+  system: "analgesic agents"
+},
+{
+  brand: "Celebrex",
+  generic: "celecoxib",
+  class: "COX‑2 selective NSAID",
+  indication: "pain and inflammation in osteoarthritis or rheumatoid arthritis",
+  system: "analgesic agents"
+},
+{
+  brand: "Tylenol with Codeine",
+  generic: "codeine/acetaminophen",
+  class: "opioid/acetaminophen combination analgesic",
+  indication: "mild to moderate pain",
+  system: "analgesic agents"
+},
+{
+  brand: "Flexeril",
+  generic: "cyclobenzaprine",
+  class: "skeletal muscle relaxant",
+  indication: "muscle spasm with acute painful musculoskeletal conditions",
+  system: "analgesic agents"
+},
+{
+  brand: "Voltaren",
+  generic: "diclofenac",
+  class: "NSAID",
+  indication: "pain and inflammation in osteoarthritis or rheumatoid arthritis",
+  system: "analgesic agents"
+},
+{
+  brand: "Duragesic",
+  generic: "fentanyl transdermal",
+  class: "opioid analgesic (patch)",
+  indication: "chronic moderate to severe pain requiring continuous opioid therapy",
+  system: "analgesic agents"
+},
+{
+  brand: "Hysingla ER",
+  generic: "hydrocodone",
+  class: "opioid analgesic",
+  indication: "severe pain when non‑opioid options are inadequate",
+  system: "analgesic agents"
+},
+{
+  brand: "Advil",
+  generic: "ibuprofen",
+  class: "NSAID",
+  indication: "mild to moderate pain, inflammation, fever",
+  system: "analgesic agents"
+},
+{
+  brand: "Indocin",
+  generic: "indomethacin",
+  class: "NSAID",
+  indication: "pain and inflammation in arthritis or acute gout",
+  system: "analgesic agents"
+},
+{
+  brand: "Lidoderm",
+  generic: "lidocaine",
+  class: "topical local anesthetic",
+  indication: "localized neuropathic pain such as post‑herpetic neuralgia",
+  system: "analgesic agents"
+},
+{
+  brand: "Mobic",
+  generic: "meloxicam",
+  class: "NSAID",
+  indication: "pain and inflammation in osteoarthritis or rheumatoid arthritis",
+  system: "analgesic agents"
+},
+{
+  brand: "Dolophine",
+  generic: "methadone",
+  class: "long‑acting opioid agonist",
+  indication: "chronic severe pain or maintenance treatment of opioid use disorder",
+  system: "analgesic agents"
+},
+{
+  brand: "Robaxin",
+  generic: "methocarbamol",
+  class: "skeletal muscle relaxant",
+  indication: "acute musculoskeletal pain with muscle spasm",
+  system: "analgesic agents"
+},
+{
+  brand: "MS Contin",
+  generic: "morphine",
+  class: "opioid analgesic",
+  indication: "moderate to severe pain",
+  system: "analgesic agents"
+},
+{
+  brand: "Naprosyn",
+  generic: "naproxen",
+  class: "NSAID",
+  indication: "mild to moderate pain, arthritis, dysmenorrhea",
+  system: "analgesic agents"
+},
+{
+  brand: "OxyContin",
+  generic: "oxycodone",
+  class: "opioid analgesic",
+  indication: "moderate to severe pain",
+  system: "analgesic agents"
+},
+{
+  brand: "Elmiron",
+  generic: "pentosan polysulfate sodium",
+  class: "bladder protectant",
+  indication: "bladder pain or discomfort from interstitial cystitis",
+  system: "analgesic agents"
+},
+{
+  brand: "Imitrex",
+  generic: "sumatriptan",
+  class: "triptan (5‑HT1B/1D receptor agonist)",
+  indication: "acute treatment of migraine attacks",
+  system: "analgesic agents"
+},
+{
+  brand: "Ultram",
+  generic: "tramadol",
+  class: "atypical opioid analgesic",
+  indication: "moderate to moderately severe pain",
+  system: "analgesic agents"
+},
+  {
+    brand: "Lipitor",
+    generic: "atorvastatin",
+    class: "HMG-CoA reductase inhibitor",
+    indication: "hyperlipidemia",
+    system: "cardiovascular"
+  },
+  {
+    brand: "Zoloft",
+    generic: "sertraline",
+    class: "SSRI",
+    indication: "depression",
+    system: "central nervous system"
+  },
+  {
+    brand: "Norvasc",
+    generic: "amlodipine",
+    class: "Calcium channel blocker",
+    indication: "hypertension",
+    system: "cardiovascular"
+  },
+  {
+    brand: "Glucophage",
+    generic: "metformin",
+    class: "Biguanide",
+    indication: "type 2 diabetes",
+    system: "endocrine"
+  },
+  {
+    brand: "Xanax",
+    generic: "alprazolam",
+    class: "Benzodiazepine",
+    indication: "anxiety",
+    system: "central nervous system"
+  },
+  {
+    brand: "Prilosec",
+    generic: "omeprazole",
+    class: "Proton pump inhibitor",
+    indication: "GERD / acid reflux",
+    system: "gastrointestinal"
+  },
+  {
+    brand: "Tenormin",
+    generic: "atenolol",
+    class: "Beta-blocker",
+    indication: "hypertension",
+    system: "cardiovascular"
+  },
+// Anti-infective Agents
+{
+  brand: "Zovirax",
+  generic: "acyclovir",
+  class: "antiviral (antiherpes)",
+  indication: "herpes simplex and varicella‑zoster infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Albenza",
+  generic: "albendazole",
+  class: "anthelmintic",
+  indication: "intestinal and tissue helminth infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Amoxil",
+  generic: "amoxicillin",
+  class: "aminopenicillin antibiotic",
+  indication: "otitis media, sinusitis, and other bacterial infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Augmentin",
+  generic: "amoxicillin/clavulanate",
+  class: "beta‑lactam/beta‑lactamase inhibitor antibiotic",
+  indication: "resistant otitis media, sinusitis, lower respiratory infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Reyataz",
+  generic: "atazanavir",
+  class: "HIV protease inhibitor",
+  indication: "treatment of HIV infection (in combination regimens)",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Zithromax",
+  generic: "azithromycin",
+  class: "macrolide antibiotic",
+  indication: "respiratory, skin, and some sexually transmitted infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Omnicef",
+  generic: "cefdinir",
+  class: "third‑generation cephalosporin antibiotic",
+  indication: "respiratory tract and skin infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Ceftin",
+  generic: "cefuroxime",
+  class: "second‑generation cephalosporin antibiotic",
+  indication: "respiratory, ear, and skin infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Keflex",
+  generic: "cephalexin",
+  class: "first‑generation cephalosporin antibiotic",
+  indication: "skin, soft tissue, and urinary infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Peridex",
+  generic: "chlorhexidine",
+  class: "topical/oral antiseptic",
+  indication: "gingivitis and oral bacterial control",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Cipro",
+  generic: "ciprofloxacin",
+  class: "fluoroquinolone antibiotic",
+  indication: "urinary tract and other systemic bacterial infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Cipro HC",
+  generic: "ciprofloxacin otic",
+  class: "fluoroquinolone antibiotic (otic)",
+  indication: "otitis externa and otitis media with tympanostomy tubes",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Biaxin",
+  generic: "clarithromycin",
+  class: "macrolide antibiotic",
+  indication: "respiratory infections and H. pylori regimens",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Cleocin",
+  generic: "clindamycin",
+  class: "lincosamide antibiotic (systemic)",
+  indication: "serious anaerobic and gram‑positive infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Clindagel",
+  generic: "clindamycin topical",
+  class: "topical lincosamide antibiotic",
+  indication: "acne and localized bacterial skin infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Adacel",
+  generic: "diphtheria toxoid (in combination vaccines)",
+  class: "inactivated bacterial vaccine component",
+  indication: "prevention of diphtheria",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Vibramycin",
+  generic: "doxycycline",
+  class: "tetracycline antibiotic",
+  indication: "respiratory, tick‑borne, and acne infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Sustiva",
+  generic: "efavirenz",
+  class: "NNRTI (non‑nucleoside reverse transcriptase inhibitor)",
+  indication: "treatment of HIV infection (combination therapy)",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Truvada",
+  generic: "emtricitabine/tenofovir",
+  class: "NRTI combination",
+  indication: "HIV treatment and pre‑exposure prophylaxis (PrEP)",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Baraclude",
+  generic: "entecavir",
+  class: "nucleoside antiviral",
+  indication: "chronic hepatitis B infection",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Dificid",
+  generic: "fidaxomicin",
+  class: "macrolide‑like antibiotic",
+  indication: "Clostridioides difficile‑associated diarrhea",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Diflucan",
+  generic: "fluconazole",
+  class: "triazole antifungal",
+  indication: "candidiasis and other systemic fungal infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Zymar",
+  generic: "gatifloxacin ophthalmic",
+  class: "fluoroquinolone antibiotic (ophthalmic)",
+  indication: "bacterial conjunctivitis",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "ActHIB",
+  generic: "Haemophilus influenzae type b vaccine",
+  class: "conjugate bacterial vaccine",
+  indication: "prevention of invasive Hib disease",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Havrix",
+  generic: "hepatitis A vaccine",
+  class: "inactivated viral vaccine",
+  indication: "prevention of hepatitis A",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Engerix‑B",
+  generic: "hepatitis B vaccine",
+  class: "recombinant viral vaccine",
+  indication: "prevention of hepatitis B",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Gardasil 9",
+  generic: "human papillomavirus vaccine",
+  class: "recombinant viral vaccine",
+  indication: "prevention of HPV‑related cervical and other cancers",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Plaquenil",
+  generic: "hydroxychloroquine",
+  class: "antimalarial and disease‑modifying agent",
+  indication: "malaria prophylaxis and autoimmune conditions",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Aldara",
+  generic: "imiquimod",
+  class: "topical immune response modifier",
+  indication: "external genital warts and other skin lesions",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Fluzone",
+  generic: "influenza vaccine, inactivated",
+  class: "inactivated viral vaccine",
+  indication: "prevention of seasonal influenza",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "FluMist",
+  generic: "influenza vaccine, live attenuated",
+  class: "live attenuated viral vaccine",
+  indication: "prevention of seasonal influenza",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Nizoral",
+  generic: "ketoconazole topical",
+  class: "topical imidazole antifungal",
+  indication: "fungal skin infections such as tinea or seborrheic dermatitis",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Levaquin",
+  generic: "levofloxacin",
+  class: "fluoroquinolone antibiotic",
+  indication: "respiratory, urinary, and systemic bacterial infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Selzentry",
+  generic: "maraviroc",
+  class: "CCR5 antagonist (antiretroviral)",
+  indication: "treatment of CCR5‑tropic HIV infection",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "M‑M‑R II",
+  generic: "measles, mumps, and rubella vaccine",
+  class: "live attenuated viral vaccine",
+  indication: "prevention of measles, mumps, and rubella",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Menactra",
+  generic: "meningococcal conjugate vaccine",
+  class: "conjugate bacterial vaccine",
+  indication: "prevention of meningococcal disease",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Flagyl",
+  generic: "metronidazole",
+  class: "nitroimidazole antibiotic/antiprotozoal",
+  indication: "anaerobic infections and certain protozoal infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Minocin",
+  generic: "minocycline",
+  class: "tetracycline antibiotic",
+  indication: "acne and other susceptible bacterial infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Avelox",
+  generic: "moxifloxacin",
+  class: "fluoroquinolone antibiotic",
+  indication: "respiratory and skin infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Vigamox",
+  generic: "moxifloxacin ophthalmic",
+  class: "fluoroquinolone antibiotic (ophthalmic)",
+  indication: "bacterial conjunctivitis",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Bactroban",
+  generic: "mupirocin",
+  class: "topical antibacterial",
+  indication: "impetigo and localized skin infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Alinia",
+  generic: "nitazoxanide",
+  class: "antiprotozoal/anthelmintic",
+  indication: "diarrhea caused by Giardia or Cryptosporidium",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Macrobid",
+  generic: "nitrofurantoin",
+  class: "urinary antiseptic antibiotic",
+  indication: "acute uncomplicated urinary tract infection",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Mycostatin",
+  generic: "nystatin",
+  class: "polyene antifungal",
+  indication: "oropharyngeal and cutaneous candidiasis",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Tamiflu",
+  generic: "oseltamivir",
+  class: "neuraminidase inhibitor antiviral",
+  indication: "treatment and prophylaxis of influenza",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Pen‑VK",
+  generic: "penicillin V",
+  class: "natural penicillin antibiotic",
+  indication: "streptococcal infections and other susceptible bacteria",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Boostrix",
+  generic: "pertussis vaccine (in Tdap)",
+  class: "inactivated bacterial vaccine component",
+  indication: "prevention of pertussis",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Prevnar 13",
+  generic: "pneumococcal conjugate vaccine",
+  class: "conjugate bacterial vaccine",
+  indication: "prevention of invasive pneumococcal disease",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "IPOL",
+  generic: "inactivated poliovirus vaccine",
+  class: "inactivated viral vaccine",
+  indication: "prevention of poliomyelitis",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Isentress",
+  generic: "raltegravir",
+  class: "integrase strand transfer inhibitor (INSTI)",
+  indication: "treatment of HIV infection (combination therapy)",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "RotaTeq",
+  generic: "rotavirus vaccine",
+  class: "live oral viral vaccine",
+  indication: "prevention of rotavirus gastroenteritis",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Lamisil",
+  generic: "terbinafine",
+  class: "allylamine antifungal",
+  indication: "onychomycosis and dermatophyte skin infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Tenivac",
+  generic: "tetanus toxoid (in Td/Tdap)",
+  class: "inactivated bacterial toxoid vaccine",
+  indication: "prevention of tetanus",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Bactrim",
+  generic: "trimethoprim/sulfamethoxazole",
+  class: "sulfonamide combination antibiotic",
+  indication: "urinary tract infections and other susceptible infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Valtrex",
+  generic: "valacyclovir",
+  class: "antiviral (antiherpes)",
+  indication: "herpes zoster and recurrent herpes simplex infections",
+  system: "Anti-infective Agents"
+},
+{
+  brand: "Shingrix",
+  generic: "zoster vaccine (recombinant)",
+  class: "recombinant viral vaccine",
+  indication: "prevention of herpes zoster (shingles)",
+  system: "Anti-infective Agents"
+},
+// ACE inhibitors
+{
+  brand: "Lotensin",
+  generic: "benazepril",
+  class: "ACE inhibitor",
+  indication: "hypertension and heart failure",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Vasotec",
+  generic: "enalapril",
+  class: "ACE inhibitor",
+  indication: "hypertension and symptomatic heart failure",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Monopril",
+  generic: "fosinopril",
+  class: "ACE inhibitor",
+  indication: "hypertension and heart failure",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Prinivil",
+  generic: "lisinopril",
+  class: "ACE inhibitor",
+  indication: "hypertension and heart failure",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Accupril",
+  generic: "quinapril",
+  class: "ACE inhibitor",
+  indication: "hypertension and heart failure",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Altace",
+  generic: "ramipril",
+  class: "ACE inhibitor",
+  indication: "hypertension and cardiovascular risk reduction",
+  system: "Cardiovascular Agents"
+},
+
+// ARBs
+{
+  brand: "Atacand",
+  generic: "candesartan",
+  class: "angiotensin II receptor blocker (ARB)",
+  indication: "hypertension and heart failure",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Avapro",
+  generic: "irbesartan",
+  class: "ARB",
+  indication: "hypertension and diabetic nephropathy",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Cozaar",
+  generic: "losartan",
+  class: "ARB",
+  indication: "hypertension and diabetic nephropathy",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Benicar",
+  generic: "olmesartan",
+  class: "ARB",
+  indication: "hypertension",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Diovan",
+  generic: "valsartan",
+  class: "ARB",
+  indication: "hypertension and heart failure",
+  system: "Cardiovascular Agents"
+},
+
+// Beta‑blockers
+{
+  brand: "Zebeta",
+  generic: "bisoprolol",
+  class: "beta‑1 selective beta‑blocker",
+  indication: "hypertension and heart failure",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Coreg",
+  generic: "carvedilol",
+  class: "nonselective beta‑blocker with alpha‑blockade",
+  indication: "heart failure and hypertension",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Normodyne",
+  generic: "labetalol",
+  class: "nonselective beta‑ and alpha‑blocker",
+  indication: "hypertension, including urgency",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Toprol XL",
+  generic: "metoprolol succinate",
+  class: "beta‑1 selective beta‑blocker",
+  indication: "hypertension and heart failure",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Lopressor",
+  generic: "metoprolol tartrate",
+  class: "beta‑1 selective beta‑blocker",
+  indication: "hypertension and angina",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Bystolic",
+  generic: "nebivolol",
+  class: "beta‑1 selective beta‑blocker",
+  indication: "hypertension",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Inderal",
+  generic: "propranolol",
+  class: "nonselective beta‑blocker",
+  indication: "hypertension, angina, and rate control",
+  system: "Cardiovascular Agents"
+},
+
+// Calcium channel blockers
+{
+  brand: "Cardizem",
+  generic: "diltiazem",
+  class: "non‑dihydropyridine calcium channel blocker",
+  indication: "hypertension, angina, and rate control in atrial arrhythmias",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Plendil",
+  generic: "felodipine",
+  class: "dihydropyridine calcium channel blocker",
+  indication: "hypertension",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Procardia",
+  generic: "nifedipine",
+  class: "dihydropyridine calcium channel blocker",
+  indication: "hypertension and angina",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Calan",
+  generic: "verapamil",
+  class: "non‑dihydropyridine calcium channel blocker",
+  indication: "hypertension, angina, and rate control",
+  system: "Cardiovascular Agents"
+},
+
+// Diuretics and related
+{
+  brand: "Thalitone",
+  generic: "chlorthalidone",
+  class: "thiazide‑like diuretic",
+  indication: "hypertension and edema",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "HydroDIURIL",
+  generic: "hydrochlorothiazide",
+  class: "thiazide diuretic",
+  indication: "hypertension and edema",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Lasix",
+  generic: "furosemide",
+  class: "loop diuretic",
+  indication: "edema and hypertension",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Aldactone",
+  generic: "spironolactone",
+  class: "potassium‑sparing diuretic, aldosterone antagonist",
+  indication: "heart failure and resistant hypertension",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Dyazide",
+  generic: "triamterene/hydrochlorothiazide",
+  class: "potassium‑sparing/thiazide diuretic combination",
+  indication: "hypertension and edema",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Samsca",
+  generic: "tolvaptan",
+  class: "vasopressin V2 receptor antagonist",
+  indication: "clinically significant hypervolemic or euvolemic hyponatremia",
+  system: "Cardiovascular Agents"
+},
+
+// Lipid‑lowering
+{
+  brand: "Welchol",
+  generic: "colesevelam",
+  class: "bile acid sequestrant",
+  indication: "hyperlipidemia and adjunct for type 2 diabetes",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Zetia",
+  generic: "ezetimibe",
+  class: "cholesterol absorption inhibitor",
+  indication: "hyperlipidemia (often with a statin)",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "TriCor",
+  generic: "fenofibrate",
+  class: "fibrate",
+  indication: "hypertriglyceridemia and mixed dyslipidemia",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Lopid",
+  generic: "gemfibrozil",
+  class: "fibrate",
+  indication: "severe hypertriglyceridemia",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Mevacor",
+  generic: "lovastatin",
+  class: "HMG‑CoA reductase inhibitor (statin)",
+  indication: "hyperlipidemia and cardiovascular risk reduction",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Pravachol",
+  generic: "pravastatin",
+  class: "statin",
+  indication: "hyperlipidemia and cardiovascular risk reduction",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Crestor",
+  generic: "rosuvastatin",
+  class: "statin",
+  indication: "hyperlipidemia and cardiovascular risk reduction",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Zocor",
+  generic: "simvastatin",
+  class: "statin",
+  indication: "hyperlipidemia and cardiovascular risk reduction",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Niaspan",
+  generic: "niacin",
+  class: "vitamin B3; lipid‑lowering agent",
+  indication: "dyslipidemia (raise HDL, lower TG and LDL)",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Lovaza",
+  generic: "omega‑3‑acid ethyl esters",
+  class: "omega‑3 fatty acid",
+  indication: "severe hypertriglyceridemia",
+  system: "Cardiovascular Agents"
+},
+
+// Antiplatelets / anticoagulants
+{
+  brand: "Plavix",
+  generic: "clopidogrel",
+  class: "P2Y12 antiplatelet",
+  indication: "secondary prevention after MI, stroke, or peripheral arterial disease",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Persantine",
+  generic: "dipyridamole",
+  class: "antiplatelet; phosphodiesterase inhibitor",
+  indication: "stroke prevention (often in combination with aspirin)",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Effient",
+  generic: "prasugrel",
+  class: "P2Y12 antiplatelet",
+  indication: "prevention of thrombotic events after PCI with ACS",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Pradaxa",
+  generic: "dabigatran",
+  class: "direct thrombin inhibitor (anticoagulant)",
+  indication: "stroke prevention in nonvalvular atrial fibrillation and VTE treatment",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Lovenox",
+  generic: "enoxaparin",
+  class: "low‑molecular‑weight heparin",
+  indication: "DVT/PE prophylaxis and treatment, ACS",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Xarelto",
+  generic: "rivaroxaban",
+  class: "factor Xa inhibitor (anticoagulant)",
+  indication: "stroke prevention in AF and VTE treatment",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Coumadin",
+  generic: "warfarin",
+  class: "vitamin K antagonist (anticoagulant)",
+  indication: "prevention and treatment of thromboembolic disorders",
+  system: "Cardiovascular Agents"
+},
+
+// Other CV drugs
+{
+  brand: "Catapres",
+  generic: "clonidine",
+  class: "central alpha‑2 agonist",
+  indication: "hypertension (often resistant)",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Lanoxin",
+  generic: "digoxin",
+  class: "cardiac glycoside",
+  indication: "heart failure and rate control in atrial fibrillation",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Cardura",
+  generic: "doxazosin",
+  class: "alpha‑1 blocker",
+  indication: "hypertension and benign prostatic hyperplasia",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Apresoline",
+  generic: "hydralazine",
+  class: "direct arterial vasodilator",
+  indication: "hypertension and heart failure (with nitrates)",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Imdur",
+  generic: "isosorbide mononitrate",
+  class: "long‑acting nitrate",
+  indication: "chronic stable angina prophylaxis",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Niaspan",
+  generic: "niacin",
+  class: "nicotinic acid; lipid‑lowering agent",
+  indication: "dyslipidemia",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Nitrostat",
+  generic: "nitroglycerin",
+  class: "short‑acting nitrate",
+  indication: "acute relief and prophylaxis of angina",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Hytrin",
+  generic: "terazosin",
+  class: "alpha‑1 blocker",
+  indication: "hypertension and benign prostatic hyperplasia",
+  system: "Cardiovascular Agents"
+},
+{
+  brand: "Ranexa",
+  generic: "ranolazine",
+  class: "antianginal agent",
+  indication: "chronic angina",
+  system: "Cardiovascular Agents"
+},
+// Bone health – bisphosphonates and SERM
+{
+  brand: "Fosamax",
+  generic: "alendronate",
+  class: "bisphosphonate",
+  indication: "prevention and treatment of osteoporosis",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Boniva",
+  generic: "ibandronate",
+  class: "bisphosphonate",
+  indication: "treatment and prevention of postmenopausal osteoporosis",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Actonel",
+  generic: "risedronate",
+  class: "bisphosphonate",
+  indication: "treatment and prevention of osteoporosis",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Evista",
+  generic: "raloxifene",
+  class: "selective estrogen receptor modulator (SERM)",
+  indication: "prevention and treatment of postmenopausal osteoporosis",
+  system: "Endocrine Agents"
+},
+
+// Estrogens, progestins, testosterone
+{
+  brand: "Premarin",
+  generic: "conjugated estrogens",
+  class: "estrogen hormone",
+  indication: "menopausal vasomotor symptoms and prevention of osteoporosis",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Estrace",
+  generic: "estradiol oral",
+  class: "estrogen hormone",
+  indication: "menopausal symptoms and hypoestrogenism",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Vivelle‑DOT",
+  generic: "estradiol transdermal patch",
+  class: "estrogen hormone (transdermal)",
+  indication: "menopausal vasomotor symptoms and prevention of osteoporosis",
+  system: "Endocrine Agents"
+},
+{
+  brand: "NuvaRing",
+  generic: "ethinyl estradiol/etonogestrel",
+  class: "combined hormonal contraceptive (vaginal ring)",
+  indication: "prevention of pregnancy",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Provera",
+  generic: "medroxyprogesterone oral",
+  class: "progestin",
+  indication: "abnormal uterine bleeding and secondary amenorrhea",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Prometrium",
+  generic: "progesterone",
+  class: "progestin hormone",
+  indication: "prevention of endometrial hyperplasia in women on estrogen",
+  system: "Endocrine Agents"
+},
+{
+  brand: "AndroGel",
+  generic: "testosterone",
+  class: "androgen hormone",
+  indication: "male hypogonadism",
+  system: "Endocrine Agents"
+},
+
+// Oral contraceptives (representative)
+{
+  brand: "Various",
+  generic: "oral contraceptive – monophasic",
+  class: "combined estrogen/progestin contraceptive",
+  indication: "prevention of pregnancy (fixed dose each active pill)",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Various",
+  generic: "oral contraceptive – biphasic",
+  class: "combined estrogen/progestin contraceptive",
+  indication: "prevention of pregnancy (two hormone dose phases)",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Various",
+  generic: "oral contraceptive – triphasic",
+  class: "combined estrogen/progestin contraceptive",
+  indication: "prevention of pregnancy (three hormone dose phases)",
+  system: "Endocrine Agents"
+},
+
+// Thyroid
+{
+  brand: "Synthroid",
+  generic: "levothyroxine",
+  class: "thyroid hormone (T4)",
+  indication: "hypothyroidism and TSH suppression in some thyroid cancers",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Armour Thyroid",
+  generic: "thyroid, desiccated",
+  class: "thyroid hormone mixture (T3/T4)",
+  indication: "hypothyroidism",
+  system: "Endocrine Agents"
+},
+
+// Diabetes – biguanide, secretagogues, TZDs, DPP‑4, GLP‑1
+{
+  brand: "Glucophage",
+  generic: "metformin",
+  class: "biguanide",
+  indication: "type 2 diabetes mellitus",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Amaryl",
+  generic: "glimepiride",
+  class: "sulfonylurea",
+  indication: "type 2 diabetes mellitus",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Glucotrol",
+  generic: "glipizide",
+  class: "sulfonylurea",
+  indication: "type 2 diabetes mellitus",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Prandin",
+  generic: "repaglinide",
+  class: "meglitinide",
+  indication: "type 2 diabetes mellitus (postprandial glucose control)",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Actos",
+  generic: "pioglitazone",
+  class: "thiazolidinedione (TZD)",
+  indication: "type 2 diabetes mellitus (insulin sensitizer)",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Avandia",
+  generic: "rosiglitazone",
+  class: "thiazolidinedione (TZD)",
+  indication: "type 2 diabetes mellitus",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Januvia",
+  generic: "sitagliptin",
+  class: "DPP‑4 inhibitor",
+  indication: "type 2 diabetes mellitus",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Onglyza",
+  generic: "saxagliptin",
+  class: "DPP‑4 inhibitor",
+  indication: "type 2 diabetes mellitus",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Tradjenta",
+  generic: "linagliptin",
+  class: "DPP‑4 inhibitor",
+  indication: "type 2 diabetes mellitus",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Byetta",
+  generic: "exenatide",
+  class: "GLP‑1 receptor agonist",
+  indication: "type 2 diabetes mellitus",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Victoza",
+  generic: "liraglutide",
+  class: "GLP‑1 receptor agonist",
+  indication: "type 2 diabetes mellitus and weight management",
+  system: "Endocrine Agents"
+},
+
+// Insulins (you can add more detail per your course)
+{
+  brand: "Humulin / Novolin",
+  generic: "insulin (human)",
+  class: "intermediate/short‑acting insulin (varies by product)",
+  indication: "type 1 and type 2 diabetes mellitus",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Novolog",
+  generic: "insulin aspart",
+  class: "rapid‑acting insulin",
+  indication: "mealtime glucose control in diabetes",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Levemir",
+  generic: "insulin detemir",
+  class: "long‑acting basal insulin",
+  indication: "basal glucose control in diabetes",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Lantus",
+  generic: "insulin glargine",
+  class: "long‑acting basal insulin",
+  indication: "basal glucose control in diabetes",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Humalog",
+  generic: "insulin lispro",
+  class: "rapid‑acting insulin",
+  indication: "mealtime glucose control in diabetes",
+  system: "Endocrine Agents"
+},
+
+// Vitamins, minerals, prenatal
+{
+  brand: "Nascobal / generic",
+  generic: "cyanocobalamin",
+  class: "vitamin B12",
+  indication: "vitamin B12 deficiency and pernicious anemia",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Folvite",
+  generic: "folic acid",
+  class: "water‑soluble vitamin (B9)",
+  indication: "folate deficiency and supplementation in pregnancy",
+  system: "Endocrine Agents"
+},
+{
+  brand: "K‑Dur",
+  generic: "potassium chloride",
+  class: "potassium supplement",
+  indication: "treatment and prevention of hypokalemia",
+  system: "Endocrine Agents"
+},
+{
+  brand: "SSKI",
+  generic: "potassium iodide",
+  class: "iodide supplement/thyroid preparation",
+  indication: "thyroid protection or iodine supplementation",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Prenatal 1+1",
+  generic: "prenatal vitamin with iron and folate",
+  class: "prenatal multivitamin",
+  indication: "nutritional supplementation in pregnancy",
+  system: "Endocrine Agents"
+},
+
+// Corticosteroids
+{
+  brand: "Decadron",
+  generic: "dexamethasone",
+  class: "systemic corticosteroid",
+  indication: "inflammatory and autoimmune conditions",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Medrol",
+  generic: "methylprednisolone oral",
+  class: "systemic corticosteroid",
+  indication: "inflammatory and allergic conditions",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Orapred",
+  generic: "prednisolone oral",
+  class: "systemic corticosteroid",
+  indication: "inflammatory, allergic, and autoimmune conditions",
+  system: "Endocrine Agents"
+},
+{
+  brand: "Deltasone",
+  generic: "prednisone",
+  class: "systemic corticosteroid",
+  indication: "inflammatory, allergic, and autoimmune conditions",
+  system: "Endocrine Agents"
+},
+// Bladder/BPH agents commonly taught with GI/urologic topics
+{
+  brand: "Enablex",
+  generic: "darifenacin",
+  class: "antimuscarinic (overactive bladder)",
+  indication: "overactive bladder with urge incontinence",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Proscar",
+  generic: "finasteride",
+  class: "5‑alpha‑reductase inhibitor",
+  indication: "benign prostatic hyperplasia",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Flomax",
+  generic: "tamsulosin",
+  class: "alpha‑1A adrenergic blocker",
+  indication: "benign prostatic hyperplasia, lower urinary tract symptoms",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Detrol",
+  generic: "tolterodine",
+  class: "antimuscarinic (overactive bladder)",
+  indication: "overactive bladder with urinary urgency and frequency",
+  system: "Gastrointestinal Agents"
+},
+
+// Proton pump inhibitors (PPIs)
+{
+  brand: "Dexilant",
+  generic: "dexlansoprazole",
+  class: "proton pump inhibitor (PPI)",
+  indication: "GERD and erosive esophagitis",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Nexium",
+  generic: "esomeprazole",
+  class: "PPI",
+  indication: "GERD, erosive esophagitis, H. pylori–associated ulcers",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Prevacid",
+  generic: "lansoprazole",
+  class: "PPI",
+  indication: "GERD, ulcers, and erosive esophagitis",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Prilosec",
+  generic: "omeprazole",
+  class: "PPI",
+  indication: "GERD, peptic ulcers, and acid hypersecretion conditions",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Protonix",
+  generic: "pantoprazole",
+  class: "PPI",
+  indication: "GERD, erosive esophagitis, and acid hypersecretion",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "AcipHex",
+  generic: "rabeprazole",
+  class: "PPI",
+  indication: "GERD, ulcers, and other acid‑related disorders",
+  system: "Gastrointestinal Agents"
+},
+
+// H2 blockers
+{
+  brand: "Pepcid",
+  generic: "famotidine",
+  class: "histamine‑2 receptor antagonist (H2 blocker)",
+  indication: "GERD, gastric and duodenal ulcers, heartburn",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Zantac",
+  generic: "ranitidine",
+  class: "H2 blocker",
+  indication: "GERD, ulcer disease, and heartburn",
+  system: "Gastrointestinal Agents"
+},
+
+// Motility / antiemetic / IBS/constipation
+{
+  brand: "Lomotil",
+  generic: "diphenoxylate/atropine",
+  class: "opioid antidiarrheal combination",
+  indication: "adjunctive treatment of acute diarrhea",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Amitiza",
+  generic: "lubiprostone",
+  class: "chloride channel activator laxative",
+  indication: "chronic idiopathic constipation and IBS with constipation",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Reglan",
+  generic: "metoclopramide",
+  class: "prokinetic; dopamine antagonist antiemetic",
+  indication: "diabetic gastroparesis and GERD; prevention of nausea",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "Zofran",
+  generic: "ondansetron",
+  class: "5‑HT3 receptor antagonist antiemetic",
+  indication: "prevention of chemotherapy‑, radiation‑, and postop‑induced nausea",
+  system: "Gastrointestinal Agents"
+},
+{
+  brand: "MiraLAX",
+  generic: "polyethylene glycol 3350",
+  class: "osmotic laxative",
+  indication: "occasional constipation",
+  system: "Gastrointestinal Agents"
+},
+
+// Urinary analgesic
+{
+  brand: "Pyridium",
+  generic: "phenazopyridine",
+  class: "urinary tract analgesic",
+  indication: "symptomatic relief of dysuria from urinary irritation",
+  system: "Gastrointestinal Agents"
+},
+// Dermatology / rheumatology / oncology
+{
+  brand: "Differin",
+  generic: "adapalene",
+  class: "topical retinoid",
+  indication: "acne vulgaris",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Zyloprim",
+  generic: "allopurinol",
+  class: "xanthine oxidase inhibitor",
+  indication: "chronic gout and hyperuricemia",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Arimidex",
+  generic: "anastrozole",
+  class: "aromatase inhibitor",
+  indication: "hormone receptor–positive breast cancer in postmenopausal women",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Trexall",
+  generic: "methotrexate",
+  class: "antimetabolite; disease‑modifying antirheumatic drug (DMARD)",
+  indication: "rheumatoid arthritis, psoriasis, and some cancers",
+  system: "Miscellaneous Agents"
+},
+
+// Glaucoma / ophthalmic
+{
+  brand: "Lumigan",
+  generic: "bimatoprost ophthalmic",
+  class: "prostaglandin analog (ophthalmic)",
+  indication: "elevated intraocular pressure in glaucoma or ocular hypertension",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Alphagan P",
+  generic: "brimonidine ophthalmic",
+  class: "alpha‑2 adrenergic agonist (ophthalmic)",
+  indication: "elevated intraocular pressure in glaucoma or ocular hypertension",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Restasis",
+  generic: "cyclosporine ophthalmic",
+  class: "topical calcineurin inhibitor (ophthalmic immunomodulator)",
+  indication: "chronic dry eye disease with ocular inflammation",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Lotemax",
+  generic: "loteprednol ophthalmic",
+  class: "ophthalmic corticosteroid",
+  indication: "ocular inflammation and allergic conjunctivitis",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Xalatan",
+  generic: "latanoprost",
+  class: "prostaglandin analog (ophthalmic)",
+  indication: "open‑angle glaucoma and ocular hypertension",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Travatan Z",
+  generic: "travoprost",
+  class: "prostaglandin analog (ophthalmic)",
+  indication: "open‑angle glaucoma and ocular hypertension",
+  system: "Miscellaneous Agents"
+},
+
+// Topical steroids and immunomodulators
+{
+  brand: "Temovate",
+  generic: "clobetasol",
+  class: "high‑potency topical corticosteroid",
+  indication: "severe corticosteroid‑responsive dermatoses such as psoriasis",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Lidex",
+  generic: "fluocinonide",
+  class: "high‑potency topical corticosteroid",
+  indication: "inflammatory and pruritic corticosteroid‑responsive skin conditions",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Cortaid",
+  generic: "hydrocortisone topical",
+  class: "low‑potency topical corticosteroid",
+  indication: "mild inflammatory skin conditions and pruritus",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Kenalog",
+  generic: "triamcinolone topical",
+  class: "medium‑potency topical corticosteroid",
+  indication: "corticosteroid‑responsive dermatoses",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Elidel / Protopic family",
+  generic: "tacrolimus topical",
+  class: "topical calcineurin inhibitor",
+  indication: "moderate to severe atopic dermatitis not controlled by steroids",
+  system: "Miscellaneous Agents"
+},
+
+// Antifungal + steroid combo
+{
+  brand: "Lotrisone",
+  generic: "clotrimazole/betamethasone",
+  class: "topical antifungal/corticosteroid combination",
+  indication: "inflammatory tinea infections (athlete’s foot, jock itch, ringworm)",
+  system: "Miscellaneous Agents"
+},
+
+// Gout / uric acid
+{
+  brand: "Uloric",
+  generic: "febuxostat",
+  class: "xanthine oxidase inhibitor",
+  indication: "chronic hyperuricemia in gout (when allopurinol not suitable)",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Colcrys",
+  generic: "colchicine",
+  class: "microtubule inhibitor; antigout agent",
+  indication: "treatment and prophylaxis of acute gout flares",
+  system: "Miscellaneous Agents"
+},
+
+// Erythropoiesis‑stimulating agents
+{
+  brand: "Aranesp",
+  generic: "darbepoetin alfa",
+  class: "erythropoiesis‑stimulating agent (ESA)",
+  indication: "anemia due to chronic kidney disease or chemotherapy",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Procrit",
+  generic: "epoetin alfa",
+  class: "ESA (recombinant erythropoietin)",
+  indication: "anemia associated with CKD, HIV therapy, or chemotherapy",
+  system: "Miscellaneous Agents"
+},
+
+// Emergency / anaphylaxis
+{
+  brand: "EpiPen",
+  generic: "epinephrine",
+  class: "alpha/beta adrenergic agonist",
+  indication: "emergency treatment of anaphylaxis",
+  system: "Miscellaneous Agents"
+},
+
+// PDE‑5 inhibitors (ED, some for BPH/PAH)
+{
+  brand: "Viagra",
+  generic: "sildenafil",
+  class: "phosphodiesterase‑5 inhibitor",
+  indication: "erectile dysfunction; some forms for pulmonary arterial hypertension",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Cialis",
+  generic: "tadalafil",
+  class: "phosphodiesterase‑5 inhibitor",
+  indication: "erectile dysfunction and benign prostatic hyperplasia",
+  system: "Miscellaneous Agents"
+},
+{
+  brand: "Levitra",
+  generic: "vardenafil",
+  class: "phosphodiesterase‑5 inhibitor",
+  indication: "erectile dysfunction",
+  system: "Miscellaneous Agents"
+},
+// Muscle relaxant
+{
+  brand: "Zanaflex",
+  generic: "tizanidine",
+  class: "alpha‑2 agonist muscle relaxant",
+  indication: "muscle spasticity (e.g., from multiple sclerosis or spinal cord injury)",
+  system: "Neurologic Agents"
+},
+
+// Benzodiazepines and hypnotics
+{
+  brand: "Xanax",
+  generic: "alprazolam",
+  class: "benzodiazepine",
+  indication: "acute treatment of anxiety and panic disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Klonopin",
+  generic: "clonazepam",
+  class: "benzodiazepine",
+  indication: "seizure disorders and panic disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Valium",
+  generic: "diazepam",
+  class: "benzodiazepine",
+  indication: "anxiety, muscle spasm, and status epilepticus",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Ativan",
+  generic: "lorazepam",
+  class: "benzodiazepine",
+  indication: "anxiety and status epilepticus",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Restoril",
+  generic: "temazepam",
+  class: "benzodiazepine hypnotic",
+  indication: "short‑term treatment of insomnia",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Ambien",
+  generic: "zolpidem",
+  class: "non‑benzodiazepine hypnotic",
+  indication: "short‑term treatment of insomnia",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Lunesta",
+  generic: "eszopiclone",
+  class: "non‑benzodiazepine hypnotic",
+  indication: "insomnia",
+  system: "Neurologic Agents"
+},
+
+// Antidepressants (TCAs, SSRIs, SNRIs, others)
+{
+  brand: "Elavil",
+  generic: "amitriptyline",
+  class: "tricyclic antidepressant (TCA)",
+  indication: "depression and neuropathic/chronic pain",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Sinequan",
+  generic: "doxepin",
+  class: "TCA",
+  indication: "depression and anxiety; low doses for insomnia",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Pamelor",
+  generic: "nortriptyline",
+  class: "TCA",
+  indication: "depression and certain chronic pain syndromes",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Celexa",
+  generic: "citalopram",
+  class: "SSRI",
+  indication: "major depressive disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Lexapro",
+  generic: "escitalopram",
+  class: "SSRI",
+  indication: "depression and generalized anxiety disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Prozac",
+  generic: "fluoxetine",
+  class: "SSRI",
+  indication: "depression and related mood disorders",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Paxil",
+  generic: "paroxetine",
+  class: "SSRI",
+  indication: "depression and anxiety disorders",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Zoloft",
+  generic: "sertraline",
+  class: "SSRI",
+  indication: "depression and anxiety disorders",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Effexor XR",
+  generic: "venlafaxine",
+  class: "SNRI",
+  indication: "depression, generalized anxiety, and panic disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Pristiq",
+  generic: "desvenlafaxine",
+  class: "SNRI",
+  indication: "major depressive disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Cymbalta",
+  generic: "duloxetine",
+  class: "SNRI",
+  indication: "depression, generalized anxiety, and neuropathic pain",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Viibryd",
+  generic: "vilazodone",
+  class: "SSRI and 5‑HT1A partial agonist",
+  indication: "major depressive disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Remeron",
+  generic: "mirtazapine",
+  class: "atypical antidepressant",
+  indication: "major depressive disorder (often with insomnia/low appetite)",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Wellbutrin SR / XL",
+  generic: "bupropion",
+  class: "atypical antidepressant; NDRI",
+  indication: "depression and smoking cessation (as Zyban)",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Buspar",
+  generic: "buspirone",
+  class: "anxiolytic (5‑HT1A partial agonist)",
+  indication: "generalized anxiety disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Chantix",
+  generic: "varenicline",
+  class: "partial nicotine receptor agonist",
+  indication: "smoking cessation",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Desyrel",
+  generic: "trazodone",
+  class: "serotonin antagonist and reuptake inhibitor",
+  indication: "depression; low doses often used for insomnia",
+  system: "Neurologic Agents"
+},
+
+// Stimulants / ADHD / wake‑promoting
+{
+  brand: "Strattera",
+  generic: "atomoxetine",
+  class: "selective norepinephrine reuptake inhibitor",
+  indication: "attention‑deficit/hyperactivity disorder (ADHD)",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Focalin",
+  generic: "dexmethylphenidate",
+  class: "CNS stimulant",
+  indication: "ADHD",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Ritalin",
+  generic: "methylphenidate",
+  class: "CNS stimulant",
+  indication: "ADHD",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Vyvanse",
+  generic: "lisdexamfetamine",
+  class: "CNS stimulant (prodrug of dextroamphetamine)",
+  indication: "ADHD and binge eating disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Provigil",
+  generic: "modafinil",
+  class: "wakefulness‑promoting agent",
+  indication: "narcolepsy and other excessive sleepiness disorders",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Adipex‑P",
+  generic: "phentermine",
+  class: "sympathomimetic amine",
+  indication: "short‑term weight management",
+  system: "Neurologic Agents"
+},
+
+// Mood stabilizers
+{
+  brand: "Lithobid",
+  generic: "lithium carbonate",
+  class: "mood stabilizer",
+  indication: "bipolar disorder (mania and maintenance)",
+  system: "Neurologic Agents"
+},
+
+// Antipsychotics
+{
+  brand: "Abilify",
+  generic: "aripiprazole",
+  class: "atypical antipsychotic",
+  indication: "schizophrenia, bipolar disorder, and adjunct in depression",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Zyprexa",
+  generic: "olanzapine",
+  class: "atypical antipsychotic",
+  indication: "schizophrenia and bipolar disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Seroquel",
+  generic: "quetiapine",
+  class: "atypical antipsychotic",
+  indication: "schizophrenia, bipolar disorder, and adjunct in depression",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Risperdal",
+  generic: "risperidone",
+  class: "atypical antipsychotic",
+  indication: "schizophrenia, bipolar disorder, and irritability in autism",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Geodon",
+  generic: "ziprasidone",
+  class: "atypical antipsychotic",
+  indication: "schizophrenia and bipolar disorder",
+  system: "Neurologic Agents"
+},
+
+// Seizures / neuropathic pain
+{
+  brand: "Tegretol",
+  generic: "carbamazepine",
+  class: "anticonvulsant",
+  indication: "seizure disorders and trigeminal neuralgia",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Onfi",
+  generic: "clobazam",
+  class: "benzodiazepine anticonvulsant",
+  indication: "Lennox–Gastaut syndrome and other seizures",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Depakote",
+  generic: "divalproex",
+  class: "anticonvulsant; mood stabilizer",
+  indication: "seizure disorders, bipolar disorder, and migraine prophylaxis",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Vimpat",
+  generic: "lacosamide",
+  class: "anticonvulsant",
+  indication: "partial‑onset seizures",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Lamictal",
+  generic: "lamotrigine",
+  class: "anticonvulsant; mood stabilizer",
+  indication: "seizure disorders and bipolar disorder",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Keppra",
+  generic: "levetiracetam",
+  class: "anticonvulsant",
+  indication: "seizure disorders",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Topamax",
+  generic: "topiramate",
+  class: "anticonvulsant",
+  indication: "seizures and migraine prophylaxis",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Dilantin",
+  generic: "phenytoin",
+  class: "anticonvulsant",
+  indication: "seizure disorders",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Luminal",
+  generic: "phenobarbital",
+  class: "barbiturate anticonvulsant",
+  indication: "seizure disorders and sedation",
+  system: "Neurologic Agents"
+},
+
+// Neuropathic pain / fibromyalgia / anxiety‑adjacent
+{
+  brand: "Neurontin",
+  generic: "gabapentin",
+  class: "anticonvulsant; neuropathic pain agent",
+  indication: "partial seizures and neuropathic pain",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Lyrica",
+  generic: "pregabalin",
+  class: "anticonvulsant; neuropathic pain agent",
+  indication: "neuropathic pain, fibromyalgia, and partial seizures",
+  system: "Neurologic Agents"
+},
+
+// Dementia / cognition
+{
+  brand: "Aricept",
+  generic: "donepezil",
+  class: "acetylcholinesterase inhibitor",
+  indication: "mild to severe Alzheimer’s disease",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Namenda",
+  generic: "memantine",
+  class: "NMDA receptor antagonist",
+  indication: "moderate to severe Alzheimer’s disease",
+  system: "Neurologic Agents"
+},
+
+// Parkinson / movement disorders
+{
+  brand: "Sinemet",
+  generic: "carbidopa/levodopa",
+  class: "dopamine precursor combination",
+  indication: "Parkinson disease and parkinsonism",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Mirapex",
+  generic: "pramipexole",
+  class: "dopamine agonist",
+  indication: "Parkinson disease and restless legs syndrome",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Requip",
+  generic: "ropinirole",
+  class: "dopamine agonist",
+  indication: "Parkinson disease and restless legs syndrome",
+  system: "Neurologic Agents"
+},
+
+// Bladder / anticholinergic (often taught with neuro)
+{
+  brand: "Ditropan",
+  generic: "oxybutynin",
+  class: "antimuscarinic",
+  indication: "overactive bladder with urge incontinence",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Vesicare",
+  generic: "solifenacin",
+  class: "antimuscarinic",
+  indication: "overactive bladder with urinary urgency and frequency",
+  system: "Neurologic Agents"
+},
+// Short-acting beta-agonists (SABA)
+{
+  brand: "ProAir HFA",
+  generic: "albuterol",
+  class: "short-acting beta-2 agonist (SABA) bronchodilator",
+  indication: "acute relief and prevention of bronchospasm in asthma or COPD",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Xopenex",
+  generic: "levalbuterol",
+  class: "short-acting beta-2 agonist bronchodilator",
+  indication: "treatment or prevention of bronchospasm in reversible airway disease",
+  system: "Respiratory Agents"
+},
+
+// Inhaled corticosteroids (ICS) and ICS/LABA
+{
+  brand: "Pulmicort",
+  generic: "budesonide",
+  class: "inhaled corticosteroid",
+  indication: "maintenance treatment of asthma",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Symbicort",
+  generic: "budesonide/formoterol",
+  class: "ICS / long-acting beta-agonist (LABA) combination",
+  indication: "maintenance treatment of asthma and COPD",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Flovent",
+  generic: "fluticasone oral inhalation",
+  class: "inhaled corticosteroid",
+  indication: "maintenance treatment of asthma",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Advair",
+  generic: "fluticasone/salmeterol",
+  class: "ICS / LABA combination",
+  indication: "asthma and COPD maintenance therapy",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Asmanex",
+  generic: "mometasone inhalation",
+  class: "inhaled corticosteroid",
+  indication: "maintenance treatment of asthma",
+  system: "Respiratory Agents"
+},
+
+// Anticholinergic bronchodilators
+{
+  brand: "DuoNeb",
+  generic: "ipratropium/albuterol",
+  class: "short-acting antimuscarinic plus SABA combination",
+  indication: "bronchospasm in COPD; sometimes used in acute asthma",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Spiriva",
+  generic: "tiotropium",
+  class: "long-acting antimuscarinic bronchodilator (LAMA)",
+  indication: "maintenance treatment of COPD and asthma",
+  system: "Respiratory Agents"
+},
+
+// Leukotriene receptor antagonist
+{
+  brand: "Singulair",
+  generic: "montelukast",
+  class: "leukotriene receptor antagonist",
+  indication: "asthma prophylaxis and allergic rhinitis; prevention of exercise-induced bronchospasm",
+  system: "Respiratory Agents"
+},
+
+// Antihistamines (oral, 2nd gen and 1st gen)
+{
+  brand: "Astelin",
+  generic: "azelastine",
+  class: "intranasal antihistamine",
+  indication: "seasonal and perennial allergic rhinitis",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Zyrtec",
+  generic: "cetirizine",
+  class: "second-generation antihistamine",
+  indication: "allergic rhinitis and chronic urticaria",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Allegra",
+  generic: "fexofenadine",
+  class: "second-generation antihistamine",
+  indication: "seasonal allergic rhinitis and chronic idiopathic urticaria",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Xyzal",
+  generic: "levocetirizine",
+  class: "second-generation antihistamine",
+  indication: "allergic rhinitis and chronic idiopathic urticaria",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Vistaril",
+  generic: "hydroxyzine",
+  class: "first-generation antihistamine",
+  indication: "allergic pruritus and anxiety; sometimes used for itching in allergies",
+  system: "Respiratory Agents"
+},
+
+// Nasal corticosteroids
+{
+  brand: "Flonase",
+  generic: "fluticasone nasal",
+  class: "intranasal corticosteroid",
+  indication: "seasonal and perennial allergic rhinitis",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Nasonex",
+  generic: "mometasone nasal",
+  class: "intranasal corticosteroid",
+  indication: "allergic rhinitis and nasal polyps",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Nasacort AQ",
+  generic: "triamcinolone nasal",
+  class: "intranasal corticosteroid",
+  indication: "seasonal and perennial allergic rhinitis",
+  system: "Respiratory Agents"
+},
+
+// Ophthalmic/nasal antihistamine for allergies
+{
+  brand: "Patanol / Pataday",
+  generic: "olopatadine",
+  class: "antihistamine (ophthalmic or intranasal)",
+  indication: "allergic conjunctivitis and seasonal allergic rhinitis (depending on formulation)",
+  system: "Respiratory Agents"
+},
+{
+  brand: "Lioresal",
+  generic: "baclofen",
+  class: "skeletal muscle relaxant (GABA agonist)",
+  indication: "spasticity from multiple sclerosis or spinal cord injury",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Skelaxin",
+  generic: "metaxalone",
+  class: "skeletal muscle relaxant",
+  indication: "acute painful musculoskeletal conditions with muscle spasm",
+  system: "Neurologic Agents"
+},
+
+// Antitussive
+{
+  brand: "Tessalon Perles",
+  generic: "benzonatate",
+  class: "peripheral antitussive",
+  indication: "symptomatic relief of cough",
+  system: "Neurologic Agents"
+},
+
+// Anticholinergics for movement / GI / bladder
+{
+  brand: "Cogentin",
+  generic: "benztropine",
+  class: "anticholinergic (antiparkinson)",
+  indication: "Parkinsonism and extrapyramidal symptoms from antipsychotics",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Bentyl",
+  generic: "dicyclomine",
+  class: "anticholinergic antispasmodic",
+  indication: "irritable bowel syndrome with GI cramping",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Vesicare",
+  generic: "solifenacin",
+  class: "antimuscarinic",
+  indication: "overactive bladder with urinary urgency and frequency",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Avodart",
+  generic: "dutasteride",
+  class: "5‑alpha reductase inhibitor",
+  indication: "benign prostatic hyperplasia",
+  system: "Neurologic Agents"
+},
+
+// Migraine / dizziness
+{
+  brand: "Relpax",
+  generic: "eletriptan",
+  class: "triptan (5‑HT1B/1D receptor agonist)",
+  indication: "acute treatment of migraine attacks",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Antivert",
+  generic: "meclizine",
+  class: "antihistamine with antivertigo effects",
+  indication: "motion sickness and vertigo",
+  system: "Neurologic Agents"
+},
+
+// Anticonvulsant (extra one)
+{
+  brand: "Trileptal",
+  generic: "oxcarbazepine",
+  class: "anticonvulsant",
+  indication: "partial‑onset seizures",
+  system: "Neurologic Agents"
+},
+
+// Antiemetics
+{
+  brand: "Compazine",
+  generic: "prochlorperazine",
+  class: "phenothiazine antiemetic",
+  indication: "severe nausea and vomiting; sometimes psychotic disorders",
+  system: "Neurologic Agents"
+},
+{
+  brand: "Phenergan",
+  generic: "promethazine",
+  class: "phenothiazine antihistamine/antiemetic",
+  indication: "allergic symptoms, motion sickness, and nausea/vomiting",
+  system: "Neurologic Agents"
+}
+];
+
+
+
+  let score = 0;
+console.log("Script loaded, startGame is", typeof startGame);
+  let total = 0;
+
+  let streak = 0;
+  let bestStreak = 0;
+
+  let currentCorrectGeneric = "";
+  let currentCorrectBrand = "";
+  let currentCorrectClass = "";
+  let currentQuestionType = "brand-to-generic";
+let currentMode = "infinite";
+let questionsThisRound = 0;
+let maxQuestionsThisRound = Infinity; // by default, no limit
+
+
+let roundStartTime = Date.now();      // when the current round started
+let lastQuestionStartTime = Date.now(); // when the current question was shown
+let totalQuestionTime = 0;            // sum of time spent on answered questions (ms)
+
+let roundTimerInterval = null;
+
+let missedDrugs = [];
+
+let currentDrug = null;
+
+let normalActiveDrugs = drugs; // new variable
+let activeDrugs = drugs; // by default, all drugs
+
+
+function resetMisses() {
+  missedDrugs = [];
+
+  // Optional: small feedback message
+  const feedbackEl = document.getElementById("feedback");
+  if (feedbackEl) {
+    feedbackEl.textContent = "Missed list cleared.";
+    feedbackEl.classList.remove("correct", "incorrect");
+  }
+}
+
+function startGame() {
+  document.getElementById("start-screen").style.display = "none";
+  document.getElementById("quiz-screen").style.display = "block";
+
+  // reset stats for the run, but keep currentMode and activeDrugs from setup
+  score = 0;
+  total = 0;
+  streak = 0;
+  bestStreak = 0;
+  missedDrugs = [];
+
+  document.getElementById("score").textContent = "Score: 0 / 0";
+  document.getElementById("streak").textContent = "Streak: 0";
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("roundTime").textContent = "Round time: 0.0 s";
+  document.getElementById("avgTime").textContent = "Avg per question: 0.0 s";
+
+  roundStartTime = Date.now();
+  lastQuestionStartTime = Date.now();
+  totalQuestionTime = 0;
+  questionsThisRound = 0;
+
+  if (roundTimerInterval !== null) {
+    clearInterval(roundTimerInterval);
+  }
+  roundTimerInterval = setInterval(() => {
+    const now = Date.now();
+    const elapsedRoundSec = ((now - roundStartTime) / 1000).toFixed(1);
+    document.getElementById("roundTime").textContent =
+      "Round time: " + elapsedRoundSec + " s";
+  }, 100);
+
+  newQuestion();
+}
+
+function returnToStart() {
+  // stop the round timer
+  if (roundTimerInterval !== null) {
+    clearInterval(roundTimerInterval);
+    roundTimerInterval = null;
+  }
+
+  // reset key state
+  score = 0;
+  total = 0;
+  streak = 0;
+  bestStreak = 0;
+  questionsThisRound = 0;
+  totalQuestionTime = 0;
+
+  // clear quiz UI
+  document.getElementById("score").textContent = "Score: 0 / 0";
+  document.getElementById("streak").textContent = "Streak: 0";
+  document.getElementById("roundTime").textContent = "Round time: 0.0 s";
+  document.getElementById("avgTime").textContent = "Avg per question: 0.0 s";
+  document.getElementById("question").textContent = "";
+  document.getElementById("options").innerHTML = "";
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("feedback").classList.remove("correct", "incorrect");
+
+  // show start screen again
+  document.getElementById("quiz-screen").style.display = "none";
+  document.getElementById("start-screen").style.display = "block";
+
+  // optionally reset mode to infinite and activeDrugs to all drugs
+  currentMode = "infinite";
+  activeDrugs = drugs;
+}
+
+function applyFilters() {
+  const checkboxes = document.querySelectorAll(".system-filter");
+const selectedSystems = [];
+checkboxes.forEach(cb => {
+  if (cb.checked) {
+    selectedSystems.push(cb.value);
+  }
+});
+
+if (selectedSystems.length === 0) {
+  activeDrugs = drugs;
+} else {
+  activeDrugs = drugs.filter(d => selectedSystems.includes(d.system));
+}
+
+normalActiveDrugs = activeDrugs; // remember this as the normal pool
+
+  score = 0;
+  total = 0;
+  streak = 0;
+  bestStreak = 0;
+
+  document.getElementById("score").textContent = "Score: 0 / 0";
+  document.getElementById("streak").textContent = "Streak: 0";
+  document.getElementById("feedback").textContent = "";
+
+roundStartTime = Date.now();
+lastQuestionStartTime = Date.now();
+totalQuestionTime = 0;
+
+// clear any old interval
+if (roundTimerInterval !== null) {
+  clearInterval(roundTimerInterval);
+}
+
+// start live round timer
+roundTimerInterval = setInterval(() => {
+  const now = Date.now();
+  const elapsedRoundSec = ((now - roundStartTime) / 1000).toFixed(1);
+  document.getElementById("roundTime").textContent =
+    "Round time: " + elapsedRoundSec + " s";
+}, 100);
+
+document.getElementById("roundTime").textContent = "Round time: 0.0 s";
+document.getElementById("avgTime").textContent = "Avg per question: 0.0 s";
+
+  newQuestion();
+}
+
+function getRandomDrug() {
+  const randomIndex = Math.floor(Math.random() * activeDrugs.length);
+  return activeDrugs[randomIndex];
+}
+
+function toggleReviewMode() {
+  const btn = document.getElementById("review-button");
+
+  if (currentMode === "reviewMisses") {
+    // go back to normal quiz mode (using stored normalActiveDrugs)
+    currentMode = "infinite";
+    maxQuestionsThisRound = Infinity;
+    activeDrugs = normalActiveDrugs || drugs;
+    btn.textContent = "Review Misses";
+  } else {
+    // entering review mode: remember current normal pool
+    normalActiveDrugs = activeDrugs || drugs;
+
+    currentMode = "reviewMisses";
+    maxQuestionsThisRound = Infinity;
+    activeDrugs = missedDrugs.length > 0 ? missedDrugs : drugs;
+    btn.textContent = "Return to Quiz";
+  }
+
+  questionsThisRound = 0;
+  newQuestion();
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  questionsThisRound = 0;
+
+if (mode === "infinite") {
+  maxQuestionsThisRound = Infinity;
+  activeDrugs = normalActiveDrugs || drugs;
+} else if (mode === "classic20") {
+  maxQuestionsThisRound = 20;
+  activeDrugs = normalActiveDrugs || drugs;
+} else if (mode === "reviewMisses") {
+  maxQuestionsThisRound = Infinity;
+  activeDrugs = missedDrugs.length > 0 ? missedDrugs : drugs;
+}
+
+  const reviewBtn = document.getElementById("review-button");
+  if (reviewBtn) {
+    reviewBtn.textContent =
+      currentMode === "reviewMisses" ? "Return to Quiz" : "Review Misses";
+  }
+
+  // reset score & streak
+  score = 0;
+  total = 0;
+  streak = 0;
+  bestStreak = 0;
+
+  document.getElementById("score").textContent = "Score: 0 / 0";
+  document.getElementById("streak").textContent = "Streak: 0";
+  document.getElementById("feedback").textContent = "";
+
+  roundStartTime = Date.now();
+  lastQuestionStartTime = Date.now();
+  totalQuestionTime = 0;
+
+  if (roundTimerInterval !== null) {
+    clearInterval(roundTimerInterval);
+  }
+  roundTimerInterval = setInterval(() => {
+    const now = Date.now();
+    const elapsedRoundSec = ((now - roundStartTime) / 1000).toFixed(1);
+    document.getElementById("roundTime").textContent =
+      "Round time: " + elapsedRoundSec + " s";
+  }, 100);
+
+  document.getElementById("roundTime").textContent = "Round time: 0.0 s";
+  document.getElementById("avgTime").textContent = "Avg per question: 0.0 s";
+
+  newQuestion();
+}
+
+function newQuestion() {
+  // check if we've hit the question limit for this mode
+if (questionsThisRound >= maxQuestionsThisRound) {
+  const feedbackEl = document.getElementById("feedback");
+  feedbackEl.textContent = "Round over! Final score: " + score + " / " + total +
+    " | Best streak: " + bestStreak;
+
+  if (roundTimerInterval !== null) {
+    clearInterval(roundTimerInterval);
+    roundTimerInterval = null;
+  }
+  return;
+}
+lastQuestionStartTime = Date.now();
+
+  const questionEl = document.getElementById("question");
+  const optionsEl = document.getElementById("options");
+  const feedbackEl = document.getElementById("feedback");
+
+  feedbackEl.textContent = "";
+
+  const correctDrug = getRandomDrug();
+  currentDrug = correctDrug;
+
+    const random = Math.random();
+    let questionTypeNumber;
+
+    if (random < 1 / 3) {
+      questionTypeNumber = 0;      // brand → generic
+    } else if (random < 2 / 3) {
+      questionTypeNumber = 1;      // generic → brand
+    } else {
+      questionTypeNumber = 2;      // brand → class
+    }
+
+    if (questionTypeNumber === 0) {
+      // Type 1: Brand → Generic
+      currentQuestionType = "brand-to-generic";
+      currentCorrectGeneric = correctDrug.generic;
+      currentCorrectBrand = correctDrug.brand;
+      currentCorrectClass = correctDrug.class;
+
+      questionEl.textContent = "What is the generic name of " + correctDrug.brand + "?";
+
+      let wrongOptions = activeDrugs
+        .filter(d => d.generic !== correctDrug.generic)
+        .map(d => d.generic);
+
+      wrongOptions = wrongOptions.sort(() => Math.random() - 0.5);
+
+      const allOptions = [currentCorrectGeneric, ...wrongOptions].slice(0, 4);
+      const shuffled = allOptions.sort(() => Math.random() - 0.5);
+
+      optionsEl.innerHTML = "";
+
+      shuffled.forEach(function(option) {
+        const btn = document.createElement("button");
+        btn.textContent = option;
+        btn.onclick = function() {
+          checkAnswer(option);
+        };
+        optionsEl.appendChild(btn);
+      });
+
+    } else if (questionTypeNumber === 1) {
+      // Type 2: Generic → Brand
+      currentQuestionType = "generic-to-brand";
+      currentCorrectGeneric = correctDrug.generic;
+      currentCorrectBrand = correctDrug.brand;
+      currentCorrectClass = correctDrug.class;
+
+      questionEl.textContent = "Which brand name matches " + correctDrug.generic + "?";
+
+      let wrongOptions = activeDrugs
+        .filter(d => d.brand !== correctDrug.brand)
+        .map(d => d.brand);
+
+      wrongOptions = wrongOptions.sort(() => Math.random() - 0.5);
+
+      const allOptions = [currentCorrectBrand, ...wrongOptions].slice(0, 4);
+      const shuffled = allOptions.sort(() => Math.random() - 0.5);
+
+      optionsEl.innerHTML = "";
+
+      shuffled.forEach(function(option) {
+        const btn = document.createElement("button");
+        btn.textContent = option;
+        btn.onclick = function() {
+          checkAnswer(option);
+        };
+        optionsEl.appendChild(btn);
+      });
+
+    } else if (questionTypeNumber === 2) {
+      // Type 3: Brand → Class
+      currentQuestionType = "brand-to-class";
+      currentCorrectGeneric = correctDrug.generic;
+      currentCorrectBrand = correctDrug.brand;
+      currentCorrectClass = correctDrug.class;
+
+      questionEl.textContent = "What is the drug class of " + correctDrug.brand + "?";
+
+      let wrongOptions = activeDrugs
+        .filter(d => d.class !== correctDrug.class)
+        .map(d => d.class);
+
+      wrongOptions = wrongOptions.sort(() => Math.random() - 0.5);
+
+      const allOptions = [currentCorrectClass, ...wrongOptions].slice(0, 4);
+      const shuffled = allOptions.sort(() => Math.random() - 0.5);
+
+      optionsEl.innerHTML = "";
+
+      shuffled.forEach(function(option) {
+        const btn = document.createElement("button");
+        btn.textContent = option;
+        btn.onclick = function() {
+          checkAnswer(option);
+        };
+        optionsEl.appendChild(btn);
+      });
+    }
+  }
+
+function checkAnswer(selected) {
+  const feedbackEl = document.getElementById("feedback");
+  const scoreEl = document.getElementById("score");
+  const streakEl = document.getElementById("streak");
+  const roundTimeEl = document.getElementById("roundTime");
+  const avgTimeEl = document.getElementById("avgTime");
+
+  const now = Date.now();
+
+  // time for this question
+  const questionTime = now - lastQuestionStartTime; // in ms
+  totalQuestionTime += questionTime;
+
+  total = total + 1;
+  questionsThisRound = questionsThisRound + 1;
+
+  let isCorrect = false;
+  let correctText = "";
+
+  if (currentQuestionType === "brand-to-generic") {
+    isCorrect = (selected === currentCorrectGeneric);
+    correctText = currentCorrectGeneric;
+  } else if (currentQuestionType === "generic-to-brand") {
+    isCorrect = (selected === currentCorrectBrand);
+    correctText = currentCorrectBrand;
+  } else if (currentQuestionType === "brand-to-class") {
+    isCorrect = (selected === currentCorrectClass);
+    correctText = currentCorrectClass;
+  }
+
+feedbackEl.classList.remove("correct", "incorrect");
+
+if (isCorrect) {
+  score = score + 1;
+  streak = streak + 1;
+  if (streak > bestStreak) {
+    bestStreak = streak;
+  }
+  feedbackEl.textContent = "Correct!";
+  feedbackEl.classList.add("correct");
+} else {
+  streak = 0;
+  feedbackEl.textContent = "Not quite. The correct answer is " + correctText + ".";
+  feedbackEl.classList.add("incorrect");
+
+  const alreadyMissed = missedDrugs.some(d =>
+    d.brand === currentDrug.brand && d.generic === currentDrug.generic
+  );
+  if (!alreadyMissed) {
+    missedDrugs.push(currentDrug);
+  }
+}
+
+  scoreEl.textContent = "Score: " + score + " / " + total;
+  streakEl.textContent = "Streak: " + streak + " (Best: " + bestStreak + ")";
+
+  // timing display
+  const elapsedRoundSec = ((now - roundStartTime) / 1000).toFixed(1);
+  let avgSec = 0;
+  if (total > 0) {
+    avgSec = (totalQuestionTime / total / 1000).toFixed(1);
+  }
+
+  roundTimeEl.textContent = "Round time: " + elapsedRoundSec + " s";
+  avgTimeEl.textContent = "Avg per question: " + avgSec + " s";
+
+  // disable buttons so the question can only be answered once
+  const optionButtons = document.querySelectorAll("#options button");
+  optionButtons.forEach(btn => {
+    btn.disabled = true;
+  });
+}
+
+</script>
+</body>
